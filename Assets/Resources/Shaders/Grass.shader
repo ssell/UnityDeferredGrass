@@ -2,9 +2,9 @@
 {
     Properties
     {
-        _Texture ("Texture", 2D) = "white" {}                               // Sampled texture for grass appearance.
-        _BaseColor ("BaseColor", Color) = (1, 1, 1, 1)                      // Grass base color. Used to make gradient with tip color.
-        _TipColor ("TipColor", Color) = (1, 1, 1, 1)                        // Grass tip color. Used to make gradient with base color.
+        _AlbedoMap ("Albedo Map", 2D) = "white" {}                          // Sampled texture for grass appearance.
+        _BaseColor ("Base Color", Color) = (1, 1, 1, 1)                     // Grass base color. Used to make gradient with tip color.
+        _TipColor ("Tip Color", Color) = (1, 1, 1, 1)                       // Grass tip color. Used to make gradient with base color.
         _GrowthMap ("Growth Map", 2D) = "white" {}                          // Growth/height map
         _Dimensions ("Dimensions", Vector) = (1, 1, 1, 0)                   // (width, height, density, unused)
         _WindMap ("Wind Map", 2D) = "black" {}                              // Wind distortion map
@@ -39,7 +39,7 @@
             #pragma require 2darray
 
             #define DEFERRED_PASS
-            #define GRASS_PERSPECTIVE_BEND        // The grass quads should bend upwards to face the camera at high viewing angles
+            #define GRASS_PERSPECTIVE_BEND
             #define GRASS_WIND_HIGHLIGHT
 
             #include "UnityCG.cginc"

@@ -31,7 +31,7 @@ struct GeometryOutput
     float4 tex3     : TEXCOORD3;    // Sample from _DisruptionMap (rgba)
 };
 
-UNITY_DECLARE_TEX2D(_Texture);      // Sampled texture for grass appearance.
+UNITY_DECLARE_TEX2D(_AlbedoMap);    // Sampled texture for grass appearance.
 
 sampler2D _GrowthMap;               // Growth/height map
 float4 _GrowthMap_ST;
@@ -463,7 +463,7 @@ void FragMain(
     out half4 gbLighting : SV_Target3)  // Emission + Lighting + Lightmaps + Reflection Probes
 {
     float4 tint = lerp(_BaseColor, _TipColor, input.uv.y);
-    float4 image = UNITY_SAMPLE_TEX2D(_Texture, input.uv);
+    float4 image = UNITY_SAMPLE_TEX2D(_AlbedoMap, input.uv);
     float4 color = tint * image;
     float cutMod = 1.0f - input.tex3.g;
     float cutAlpha = (cutMod < 1.0f && input.uv.y > cutMod) ? 0.0f : 1.0f;
