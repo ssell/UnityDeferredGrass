@@ -30,23 +30,16 @@
         CGPROGRAM
             #pragma vertex VertTessMain
             #pragma fragment FragMain
-            #pragma hull HullMain
-            #pragma domain DomainMain
             #pragma geometry GeometryMain
 
             #pragma target 4.6
-            #pragma exclude_renderers nomrt
-            #pragma require 2darray
 
             #define DEFERRED_PASS
             #define GRASS_PERSPECTIVE_BEND
             #define GRASS_WIND_HIGHLIGHT
 
-            #include "UnityCG.cginc"
-            #include "UnityGBuffer.cginc"
-            #include "include/Grass.cginc"
+            #include "include/GrassWriting.cginc"
         ENDCG
         }
     }
 }
-
