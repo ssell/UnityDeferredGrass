@@ -534,9 +534,8 @@ void FragMain(
 
     UnityStandardData data;
 
-    
     #ifdef GRASS_WIND_HIGHLIGHT
-    float windHighlight = (_WindHighlights.r * clamp(input.tex2.w - 0.1f, 0.0f, 1.0f));
+    float3 windHighlight = (_WindHighlights.rgb * clamp(input.tex2.w - _WindHighlights.rgb.a, 0.0f, 1.0f));
     #else
     float windHighlight = 1.0f;
     #endif

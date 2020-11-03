@@ -8,7 +8,7 @@
         _GrowthMap ("Growth Map", 2D) = "white" {}                          // Growth/height map
         _Dimensions ("Dimensions", Vector) = (1, 1, 1, 0)                   // (width, height, density, density drop-off range)
         _WindMap ("Wind Map", 2D) = "black" {}                              // Wind distortion map
-        _WindHighlights ("Wind Highlights", Vector) = (0.0, 0.0, 0.0, 0.0)  // (unused, strength, highlight factor, unused)
+        _WindHighlights ("Wind Highlights", Vector) = (0.1, 0.1, 0.1, 0.1)  // (highlight color rgb, highlight cutoff value)
         _BendProperties ("Bend Properties", Vector) = (0.1, 0.5, 0, 0)      // (min bend, max bend, unused, unused)
         _DisruptionMap ("Disruption Map", 2D) = "white" {}                  // (flattening modifier, cut modifier, burn modifier, growth modifier) all on range [0=no modifier, 1=full modifier]
         _DensityDropOffMap ("Density Drop-Off Map", 2D) = "white" {}        // Used to control the density modifier when further away from the camera.
