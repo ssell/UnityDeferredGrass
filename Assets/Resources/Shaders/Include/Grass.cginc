@@ -26,9 +26,9 @@ struct GeometryOutput
     float4 position : SV_POSITION;
     float3 normal   : NORMAL;
     float2 uv       : TEXCOORD0;
-    float4 tex1     : TEXCOORD1;    // Sample from _GrowthMap (r)
+    float4 tex1     : TEXCOORD1;    // Sample from _GrowthMap (r), Density override (g)
     float4 tex2     : TEXCOORD2;    // Sample from _WindMap (rgb), Wind bend angle (a) for highlights
-    float4 tex3     : TEXCOORD3;    // Sample from _DisruptionMap (rgba)
+    float4 tex3     : TEXCOORD3;    // Sample from _DisruptionMap (flatten mod, cut mod, burn mod, growth mod)
 };
 
 UNITY_DECLARE_TEX2D(_AlbedoMap);    // Sampled texture for grass appearance.
@@ -42,14 +42,24 @@ float4 _WindMap_ST;
 sampler2D _DisruptionMap;           // (flattening modifier, cut modifier, burn modifier, growth modifier) all on range [0=no modifier, 1=full modifier]
 float4 _DisruptionMap_ST;
 
+sampler2D _DensityDropOffMap;       // Used to control the density modifier when further away from the camera.
+sampler2D _DetailsMap;              // Indicates where details may be placed (white). Used by the Realms Terrain
+
 float4 _BaseColor;                  // Grass base color. Used to make gradient with tip color.
 float4 _TipColor;                   // Grass tip color. Used to make gradient with base color.
 float4 _Dimensions;                 // (width, height, density, unused)
-float4 _WindDirection;              // Direction that the _WindMap is scrolled
-float4 _WindProperties;             // (speed, strength, highlight factor, unused)
+float4 _WindHighlights;             // (unused, strength, highlight factor, unused)
 float4 _BendProperties;             // (min bend, max bend, unused, unused)
 
-#define MIN_HEIGHT_CUTOFF 0.05f
+// Globals to be provided by the application
+float3 _CameraForwardVec;           // Forward vector for the camera.
+float3 _CameraTargetPos;            // World position of the target the camera is looking at.
+
+float3 _WindDirection;
+float _WindSpeed;
+float _WindStrength;
+
+#define MIN_HEIGHT_CUTOFF 0.1f
 
 /**
  * Provides a random single output value for a 3-dimensional input value.
@@ -115,8 +125,8 @@ float SampleGrowthHeight(float3 worldPos)
  */
 float3 SampleWindDirection(float3 worldPos)
 {
-    float time = _Time * _WindProperties.x;
-    float2 samplePos = worldPos.xz + (normalize(_WindDirection.xy) * time);
+    float time = _Time * _WindSpeed * 15.0f;
+    float2 samplePos = worldPos.xz + (normalize(_WindDirection.xz) * time);
     samplePos = TRANSFORM_TEX(samplePos, _WindMap);
 
     return normalize(tex2Dlod(_WindMap, float4(samplePos, 0.0f, 0.0f)).xzy * 2.0f - 1.0f);
@@ -153,21 +163,75 @@ VertOutput VertMain(VertInput input)
 #define VERT_MAIN(i) VertMain(i)
 
 // -----------------------------------------------------------------------------
+// Tessellation Vertex Shader (real vertex shader)
+// -----------------------------------------------------------------------------
+
+float CalculateDensityDropOff(in float3 worldPos, in VertInput input)
+{
+    // Adjust the target position forward (along camera forward vec) to push our grass radius forward.
+    // We do this as we don't care about drawing grass behind the camera, and so shift it forward.
+    float3 targetPos = _CameraTargetPos + (normalize(_CameraForwardVec * float3(1.0f, 0.0f, 1.0f)) * _Dimensions.a * 0.3f);
+    float3 toTarget = worldPos - targetPos;
+    float2 toTargetXZ = toTarget.xz;
+
+    // Convert to UV where [0.5, 0.5] is on the camera. The sample position is determined by the distance
+    // to the camera divided by the max density drop-off range. So if the object is to the right of the camera,
+    // and _Dimensions.a = 10.0, then at 10.0 or greater distance it will sample the edge of the density drop off texture.
+    float2 toTargetUV = normalize(toTargetXZ) * clamp(length(toTargetXZ) / _Dimensions.a, 0.0f, 1.0f);
+    toTargetUV = (toTargetUV + 1.0f) * 0.5f;
+
+    return tex2Dlod(_DensityDropOffMap, float4(toTargetUV, 0.0f, 0.0f)).r;
+}
+
+float SampleDetailsMap(in float3 worldPos)
+{
+    return tex2Dlod(_DetailsMap, float4(worldPos.xz / 256.0f, 0.0f, 0.0f)).r;
+}
+
+/**
+ * Used to adjust the density on the fly so that excess geometry is not generated.
+ */
+TessellationControlPoint VertTessMain(VertInput input)
+{
+    TessellationControlPoint output;
+
+    float3 worldPos = mul(unity_ObjectToWorld, input.position).xyz;
+
+    float densityDropOff = CalculateDensityDropOff(worldPos, input);
+    float detailSample = SampleDetailsMap(worldPos);
+
+    output.position = input.position;
+    output.normal   = input.normal;
+    output.tangent  = input.tangent;
+    output.uv       = input.uv;
+    output.tex1     = float4(0.0f, densityDropOff * detailSample, 0.0f, 0.0f);
+    output.tex2     = input.tex2;
+    output.tex3     = input.tex3;
+
+    return output;
+}
+
+// Define VERT_TESS_MAIN so that Tessellation.cginc calls the one we just defined with the density override
+#define VERT_TESS_MAIN
+
+// -----------------------------------------------------------------------------
 // Domain and Hull Shader
 // -----------------------------------------------------------------------------
 
-float CalculateTessEdgeFactor()
+float CalculateTessEdgeFactor(in TessellationControlPoint cp0, in TessellationControlPoint cp1, in TessellationControlPoint cp2)
 {
-    return _Dimensions.z;
+    // Adjust the dimension property by the drop-off value.
+    return (cp0.tex1.g * _Dimensions.z);
 }
 
-float CalculateTessInsideFactor()
+float CalculateTessInsideFactor(in TessellationControlPoint cp0, in TessellationControlPoint cp1, in TessellationControlPoint cp2)
 {
-    return _Dimensions.z;
+    // Adjust the dimension property by the drop-off value.
+    return (cp0.tex1.g * _Dimensions.z);
 }
 
-#define CALCULATE_TESS_EDGE_FACTOR CalculateTessEdgeFactor()
-#define CALCULATE_TESS_INSIDE_FACTOR CalculateTessInsideFactor()
+#define CALCULATE_TESS_EDGE_FACTOR CalculateTessEdgeFactor(patch[0], patch[1], patch[2])
+#define CALCULATE_TESS_INSIDE_FACTOR CalculateTessInsideFactor(patch[0], patch[1], patch[2])
 
 #include "Tessellation.cginc"
 
@@ -220,10 +284,10 @@ void CalculateGeometryNormals(
     inout GeometryOutput uur)
 {
     float dotRight = dot(cameraWorldView, right);
-    float3 normal = (dotRight > 0.0f ? right : left);    // If the right is facing opposite of the camera (towards) use it.
+    float3 normal = (dotRight > 0.0f ? right : left);   // If the right is facing opposite of the camera (towards) use it.
 
     normal = normalize(normal + up * 20.0f);             // Now, the grass should not be looking directly along right/left as lighting will not look correct.
-                                                         // Angle it upwards so that lighting correctly catches on the blades. Why `* 20`? Why not.
+                                                        // Angle it upwards so that lighting correctly catches on the blades. Why `* 20`? Why not.
     ll.normal = normal;
     lr.normal = normal;
     ul.normal = normal;
@@ -297,7 +361,7 @@ float3x3 GetWindRotation(
 
     windDirection = ProjectOnto(windDirection, right);
 
-    float windStrength = _WindProperties.y * length(windDirection);    
+    float windStrength = _WindStrength * length(windDirection);    
     windAngle = UNITY_PI * windStrength;
 
     float3x3 windRotation = AngleAxis3x3(windAngle, normalize(windDirection));
@@ -363,8 +427,8 @@ void GeometryMain(
 
     float flattenMod  = tex3.r;
     float growthMod   = tex3.a;
-    float width       = lerp(0.0f, _Dimensions.x, growthMod);
-    float height      = lerp(0.0f, tex1.r, growthMod);
+    float width       = lerp(0.0f, _Dimensions.x, tex3.a);
+    float height      = lerp(0.0f, tex1.r, tex3.a);
     float halfWidth   = _Dimensions.x * 0.5f;
     float heightMod   = 0.2f;
 
@@ -470,13 +534,13 @@ void FragMain(
 
     UnityStandardData data;
 
+    
     #ifdef GRASS_WIND_HIGHLIGHT
-    float windHighlight = (_WindProperties.z * clamp(input.tex2.w - 0.1f, 0.0f, 1.0f));
+    float windHighlight = (_WindHighlights.r * clamp(input.tex2.w - 0.1f, 0.0f, 1.0f));
     #else
     float windHighlight = 1.0f;
     #endif
 
-    //data.diffuseColor  = (input.tex2.xyz + 1.0f) * 0.5f;
     data.diffuseColor  = color.rgb + windHighlight;
     data.occlusion     = min(color.a, cutAlpha);
     data.specularColor = half3(0.0f, 0.0f, 0.0f);
