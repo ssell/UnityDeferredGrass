@@ -20,11 +20,15 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _AlbedoMap:
-        m_Texture: {fileID: 2800000, guid: 2c2e19bf4bf6ddd41b8c6fc76ffd8fd4, type: 3}
+        m_Texture: {fileID: 2800000, guid: c78682a1b22bdd74f8f43a0b81cdbc07, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DensityDropOffMap:
+        m_Texture: {fileID: 2800000, guid: 87b23d446154bdb42a2f0af0c682f2e5, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -39,8 +43,12 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _DetailsMap:
+        m_Texture: {fileID: 2800000, guid: 87b23d446154bdb42a2f0af0c682f2e5, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _DisruptionMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 8febb9806bb9a9741b43492b33473c7b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
@@ -48,8 +56,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GrowthMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: faef51ea9e35c8c48b3b93a16e997064, type: 3}
+        m_Scale: {x: 0.05, y: 0.05}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
@@ -68,8 +76,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _WindMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: 66345fb1e00c0d9498f5271f21bf7fc6, type: 3}
+        m_Scale: {x: 0.001, y: 0.001}
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - _BumpScale: 1
@@ -89,12 +97,13 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.5137255, g: 0.67058825, b: 0.18823531, a: 1}
     - _BendProperties: {r: 0.1, g: 0.5, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Dimensions: {r: 1, g: 1, b: 1, a: 0}
+    - _Dimensions: {r: 2, g: 1, b: 3, a: 50}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _TipColor: {r: 1, g: 1, b: 1, a: 1}
+    - _TipColor: {r: 0.59607846, g: 0.7843138, b: 0.054901965, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 0, a: 0}
+    - _WindHighlights: {r: 0.25, g: 0, b: 0, a: 0}
     - _WindProperties: {r: 1, g: 0.1, b: 0, a: 0.5}
   m_BuildTextureStacks: []
