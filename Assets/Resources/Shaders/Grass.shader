@@ -12,9 +12,9 @@
         _BendProperties ("Bend Properties", Vector) = (0.1, 0.5, 0, 0)      // (min bend, max bend, unused, unused)
         _DisruptionMap ("Disruption Map", 2D) = "white" {}                  // (flattening modifier, cut modifier, burn modifier, growth modifier) all on range [0=no modifier, 1=full modifier]
         _DensityDropOffMap ("Density Drop-Off Map", 2D) = "white" {}        // Used to control the density modifier when further away from the camera.
-        _DetailsMap ("Details Map", 2D) = "white" {}                        // Indicates where details may be placed (white). Used by the Realms Terrain
+        _DetailsMap ("Details Map", 2D) = "white" {}                        // Indicates where details may be placed (white). Can be used by a terrain system.
 
-        // Wind properties (direction, speed, and strength) are passed in as Realms globals
+        // Wind properties (direction, speed, and strength) are passed in as shader globals.
     }
 
     SubShader
@@ -26,8 +26,8 @@
             Name "DEFERRED"
             Tags { "RenderType"="Opaque" "LightMode" = "Deferred" }
 
-            AlphaToMask On
-            Cull Off
+            AlphaToMask On                          // Enable alpha cutout to discard transparent fragments.
+            Cull Off                                // Disable backface culling so our quads are visible from both sides.
 
         CGPROGRAM
             #pragma vertex VertTessMain
@@ -37,11 +37,11 @@
             #pragma geometry GeometryMain
 
             #pragma target 4.6
-            #pragma multi_compile _ UNITY_HDR_ON
+            #pragma multi_compile _ UNITY_HDR_ON    // Properly handle HDR.
 
             #define DEFERRED_PASS
-            #define GRASS_PERSPECTIVE_BEND        // The grass quads should bend upwards to face the camera at high viewing angles
-            #define GRASS_WIND_HIGHLIGHT
+            #define GRASS_PERSPECTIVE_BEND          // The grass quads should bend to face the camera at high viewing angles.
+            #define GRASS_WIND_HIGHLIGHT            // Add a slight highlight to bent quads.
 
             #include "UnityCG.cginc"
             #include "UnityGBuffer.cginc"
