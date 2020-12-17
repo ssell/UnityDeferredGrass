@@ -14,6 +14,8 @@
 #define VF_GRASS_INCLUDED
 
 #include "UnityCG.cginc"
+#include "UnityPBSLighting.cginc"
+#include "UnityStandardCore.cginc"
 #include "AutoLight.cginc"
 #include "CommonStruct.cginc"
 
@@ -519,6 +521,31 @@ void GeometryMain(
 // Fragment Shader
 // -----------------------------------------------------------------------------
 
+UnityIndirect BuildIndirectLight(float3 normal, float roughness, float3 viewDir)
+{
+    UnityIndirect indirectLight;
+
+    #if defined (DIRECTIONAL)
+    // Only apply ambient lighting for the (single) directional light in the scene.
+    indirectLight.diffuse = max(0.0f, ShadeSH9(float4(normal, 1.0f)));
+    #else
+    indirectLight.diffuse = 0.0f;
+    #endif
+
+    float3 reflectionDir = reflect(-viewDir, normal);
+
+    Unity_GlossyEnvironmentData envData;
+    envData.roughness = roughness;
+    envData.reflUVW = reflectionDir;
+
+    indirectLight.specular = Unity_GlossyEnvironment(
+        UNITY_PASS_TEXCUBE(unity_SpecCube0), 
+        unity_SpecCube0_HDR, 
+        envData);
+
+    return indirectLight;
+}
+
 void FragMain(
     GeometryOutput input,
     out half4 gbDiffuse  : SV_Target0,  // Diffuse Color RGB, Occlusion A
@@ -526,13 +553,13 @@ void FragMain(
     out half4 gbNormal   : SV_Target2,  // World Normal RGB, Unused A
     out half4 gbLighting : SV_Target3)  // Emission + Lighting + Lightmaps + Reflection Probes
 {
-    float4 tint = lerp(_BaseColor, _TipColor, input.uv.y);
-    float4 image = UNITY_SAMPLE_TEX2D(_AlbedoMap, input.uv);
-    float4 color = tint * image;
-    float cutMod = 1.0f - input.tex3.g;
-    float cutAlpha = (cutMod < 1.0f && input.uv.y > cutMod) ? 0.0f : 1.0f;
+    // Setup for color calculation
+    float4 tint     = lerp(_BaseColor, _TipColor, input.uv.y);
+    float4 image    = UNITY_SAMPLE_TEX2D(_AlbedoMap, input.uv);
+    float4 color    = tint * image;
+    float  cutMod   = 1.0f - input.tex3.g;
+    float  cutAlpha = (cutMod < 1.0f && input.uv.y > cutMod) ? 0.0f : 1.0f;
 
-    UnityStandardData data;
 
     #ifdef GRASS_WIND_HIGHLIGHT
     float windHighlight = (_WindHighlights.r * clamp(input.tex2.w - 0.1f, 0.0f, 1.0f));
@@ -540,21 +567,56 @@ void FragMain(
     float windHighlight = 0.0f;
     #endif
 
-    data.diffuseColor  = color.rgb + windHighlight;
+    // Initialize common data
+    FragmentCommonData common = (FragmentCommonData)0;
+
+    common.diffColor   = color.rgb + windHighlight;
+    common.specColor   = half3(0.0f, 0.0f, 0.0f);
+    common.smoothness  = 0.0f;
+    common.normalWorld = input.normal;
+    common.eyeVec      = normalize(_WorldSpaceCameraPos - input.position);
+    common.posWorld    = input.position;
+
+    // Build the GBuffer
+    UnityStandardData data;
+    
+    data.diffuseColor  = common.diffColor;
     data.occlusion     = min(color.a, cutAlpha);
-    data.specularColor = half3(0.0f, 0.0f, 0.0f);
-    data.smoothness    = 0.0f;
-    data.normalWorld   = input.normal;
+    data.specularColor = common.specColor;
+    data.smoothness    = common.smoothness;
+    data.normalWorld   = common.normalWorld;
 
     UnityStandardDataToGbuffer(data, gbDiffuse, gbSpecular, gbNormal);
 
-    half3 emissive = half3(0.0f, 0.0f, 0.0f);
-    
+    // Build the ambient lighting
+    half4 ambientOrLightmapUV = 0.0f;
+    half  attenuation = 1.0f;
+    bool  reflections = false;
+
+    UnityLight directLight = DummyLight();      // No direct/analytic lights during this pass. We are only building up the ambient.
+    UnityIndirect indirectLight = BuildIndirectLight(common.normalWorld, 1.0f - common.smoothness, common.eyeVec);
+
+    //UnityGI globalIllumination = FragmentGI(common, data.occlusion, ambientOrLightmapUV, attenuation, directLight, reflections);
+
+    half3 ambientLight = UNITY_BRDF_PBS(
+        common.diffColor, 
+        common.specColor, 
+        common.oneMinusReflectivity, 
+        common.smoothness, 
+        common.normalWorld, 
+        -common.eyeVec,
+        directLight,
+        indirectLight).rgb;
+
     #ifndef UNITY_HDR_ON
-        emissive.rgb = exp2(-emissive.rgb);
+        ambientLight = exp2(-ambientLight);
     #endif
 
-    gbLighting = half4(emissive, 1);
+    gbLighting = half4(ambientLight, 1.0f);
+
+    
+    //data.diffuseColor = ambientLight;
+    //UnityStandardDataToGbuffer(data, gbDiffuse, gbSpecular, gbNormal);
 }
 
 #endif

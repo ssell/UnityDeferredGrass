@@ -37,6 +37,7 @@
             #pragma geometry GeometryMain
 
             #pragma target 4.6
+            #pragma multi_compile _ UNITY_HDR_ON
 
             #define DEFERRED_PASS
             #define GRASS_PERSPECTIVE_BEND        // The grass quads should bend upwards to face the camera at high viewing angles
