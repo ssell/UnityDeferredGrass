@@ -6,7 +6,7 @@ This repository contains the source code for a deferred rendered grass effect fo
 
 There is an accompanying article,
 
-* ...
+* https://www.vertexfragment.com/rambles/unity-deferred-grass
 
 which provides a high-level overview of how the effect was created.
 
@@ -15,12 +15,6 @@ It should be noted that this project is for demonstration purposes only, and the
 The code was written against:
 
 * Unity v2020.2.0f1
-
-## Web Demo
-
-A WebGL demonstration of this effect can be seen at:
-
-* ...
 
 ## Contact
 
