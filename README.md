@@ -6,7 +6,7 @@ This repository contains the source code for a deferred rendered grass effect fo
 
 There is an accompanying article,
 
-* https://www.vertexfragment.com/rambles/unity-deferred-grass
+* https://www.vertexfragment.com/ramblings/unity-deferred-grass-rendering/
 
 which provides a high-level overview of how the effect was created.
 

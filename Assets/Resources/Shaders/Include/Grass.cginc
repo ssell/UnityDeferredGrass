@@ -560,7 +560,6 @@ void FragMain(
     float  cutMod   = 1.0f - input.tex3.g;
     float  cutAlpha = (cutMod < 1.0f && input.uv.y > cutMod) ? 0.0f : 1.0f;
 
-
     #ifdef GRASS_WIND_HIGHLIGHT
     float windHighlight = (_WindHighlights.r * clamp(input.tex2.w - 0.1f, 0.0f, 1.0f));
     #else
@@ -596,8 +595,6 @@ void FragMain(
     UnityLight directLight = DummyLight();      // No direct/analytic lights during this pass. We are only building up the ambient.
     UnityIndirect indirectLight = BuildIndirectLight(common.normalWorld, 1.0f - common.smoothness, common.eyeVec);
 
-    //UnityGI globalIllumination = FragmentGI(common, data.occlusion, ambientOrLightmapUV, attenuation, directLight, reflections);
-
     half3 ambientLight = UNITY_BRDF_PBS(
         common.diffColor, 
         common.specColor, 
@@ -613,10 +610,6 @@ void FragMain(
     #endif
 
     gbLighting = half4(ambientLight, 1.0f);
-
-    
-    //data.diffuseColor = ambientLight;
-    //UnityStandardDataToGbuffer(data, gbDiffuse, gbSpecular, gbNormal);
 }
 
 #endif
